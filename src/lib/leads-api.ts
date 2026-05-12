@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import type { NextResponse } from "next/server";
+import { leadsJsonResponse } from "@/lib/leads-cors";
 
 const SECRET_HEADER = "x-leads-secret";
 
@@ -28,7 +29,7 @@ export function validateLeadsApiSecret(request: Request): NextResponse | null {
   const supplied = header || bearer;
 
   if (!supplied || supplied !== secret) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    return leadsJsonResponse({ error: "Unauthorized." }, { status: 401 });
   }
 
   return null;

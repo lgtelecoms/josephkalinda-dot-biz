@@ -8,9 +8,10 @@ import { updatePartnerRecord, uploadPartnerLogo } from "@/server/actions";
 
 type Props = {
   partner: Partner;
+  blobStorage?: boolean;
 };
 
-export function PartnerEditForm({ partner }: Props) {
+export function PartnerEditForm({ partner, blobStorage }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [uploadPending, startUpload] = useTransition();
@@ -102,10 +103,12 @@ export function PartnerEditForm({ partner }: Props) {
       <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-4">
         <p className="text-sm font-medium text-slate-800">Partner logo</p>
         <p className="mt-1 text-xs text-slate-600">
-          Upload PNG, JPEG, or WebP (max 2 MB). Files are stored under{" "}
-          <code className="rounded bg-white px-1">/public/uploads/partners/</code>.
-          On serverless hosts without a persistent disk, prefer an external URL in
-          the path field instead.
+          PNG, JPEG, or WebP — max 2 MB.
+        </p>
+        <p className="mt-1 text-xs text-slate-600">
+          {blobStorage
+            ? "Uploads go to Vercel Blob and return a stable public URL."
+            : "Files save under /public/uploads/partners/ on this host. For serverless or multi-instance production, set BLOB_READ_WRITE_TOKEN (Vercel Blob) or use an https:// URL in the path field."}
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
           <input

@@ -259,7 +259,17 @@ export async function uploadPartnerLogo(
     return { ok: false, error: "Empty file." };
   }
 
-  const filename = `${Date.now()}-${randomBytes(6).toString("hex")}${ext}`;
+  const filename = `partner-${Date.now()}-${randomBytes(6).toString("hex")}${ext}`;
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  if (blobToken) {
+    const { put } = await import("@vercel/blob");
+    const blob = await put(`partners/${filename}`, buf, {
+      access: "public",
+      token: blobToken,
+    });
+    return { ok: true, path: blob.url };
+  }
+
   const dir = join(process.cwd(), "public", "uploads", "partners");
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, filename), buf);

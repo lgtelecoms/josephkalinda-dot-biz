@@ -1,23 +1,25 @@
-import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { contactApiJsonSchema } from "@/lib/validations";
 import { createContactSubmission } from "@/lib/submissions";
 import {
   getLeadsClientIp,
-  leadsRateLimitMax,
   validateLeadsApiSecret,
 } from "@/lib/leads-api";
-import { checkSimpleRateLimit } from "@/lib/rate-limit";
+import { checkLeadsRateLimit } from "@/lib/rate-limit-leads";
+import { leadsJsonResponse, leadsOptionsResponse } from "@/lib/leads-cors";
+
+export async function OPTIONS() {
+  return leadsOptionsResponse();
+}
 
 export async function POST(request: Request) {
   const authBlock = validateLeadsApiSecret(request);
   if (authBlock) return authBlock;
 
   const ip = getLeadsClientIp(request);
-  const limit = leadsRateLimitMax();
-  const rl = checkSimpleRateLimit(`contact:${ip}`, limit, 60_000);
+  const rl = await checkLeadsRateLimit(`contact:${ip}`);
   if (!rl.ok) {
-    return NextResponse.json(
+    return leadsJsonResponse(
       { error: "Too many requests." },
       {
         status: 429,
@@ -30,12 +32,12 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+    return leadsJsonResponse({ error: "Invalid JSON body." }, { status: 400 });
   }
 
   const parsed = contactApiJsonSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
+    return leadsJsonResponse(
       {
         error: "Validation failed.",
         details: parsed.error.flatten(),
@@ -58,7 +60,7 @@ export async function POST(request: Request) {
       serviceInterestFree: d.serviceInterest ?? null,
     });
   } catch {
-    return NextResponse.json(
+    return leadsJsonResponse(
       { error: "Could not save submission." },
       { status: 500 }
     );
@@ -66,5 +68,5 @@ export async function POST(request: Request) {
 
   revalidatePath("/admin/contacts");
   revalidatePath("/admin/dashboard");
-  return NextResponse.json({ ok: true });
+  return leadsJsonResponse({ ok: true });
 }

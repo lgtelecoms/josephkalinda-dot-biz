@@ -30,7 +30,10 @@ export default async function AdminPartnerEditPage({ params }: Props) {
           ← All partners
         </Link>
       </div>
-      <PartnerEditForm partner={partner} />
+      <PartnerEditForm
+        partner={partner}
+        blobStorage={Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim())}
+      />
     </div>
   );
 }

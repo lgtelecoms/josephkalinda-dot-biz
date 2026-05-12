@@ -20,7 +20,10 @@ Copy `.env.example` to `.env` and fill values:
 | `EMAIL_FROM`, `EMAIL_TO`, `RESEND_API_KEY` | Transactional email (see **Email** below) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | Optional SMTP when not using Resend |
 | `LEADS_API_SECRET` | If set, required on `POST /api/contact` and `POST /api/booking` (`x-leads-secret` or `Authorization: Bearer`) |
-| `LEADS_RATE_LIMIT_PER_MINUTE` | Per-IP JSON rate limit per route instance (default `30`) |
+| `LEADS_RATE_LIMIT_PER_MINUTE` | Max JSON lead posts per client IP per **60s window** (default `30`). Used by in-memory limiter, or by Upstash when configured below. |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Optional [Upstash Redis](https://upstash.com/) — enables **shared** rate limits across all instances (overrides in-memory). |
+| `LEADS_API_CORS_ORIGIN` | Optional single origin (e.g. `https://zapier.com`) for browser `fetch` to the lead APIs — adds CORS headers and `OPTIONS` support. |
+| `BLOB_READ_WRITE_TOKEN` | Optional [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) — partner logo uploads go to Blob (public URL) instead of `public/uploads/`. |
 | `NEXT_PUBLIC_SITE_URL` | Canonical URL for metadata and QR codes |
 
 ## Setup
@@ -86,14 +89,17 @@ Set **`LEADS_API_SECRET`** in production and send the same value on every `POST`
 - Header **`x-leads-secret: <your-secret>`**, or  
 - Header **`Authorization: Bearer <your-secret>`**
 
-Optional **`LEADS_RATE_LIMIT_PER_MINUTE`** (default **30**) configures a simple per-IP fixed window for both `/api/contact` and `/api/booking` on each server instance. For global limits, put a reverse proxy or Redis-based limiter in front of the app.
+Optional **`LEADS_RATE_LIMIT_PER_MINUTE`** (default **30**) configures the sliding window size. **Without Upstash**, limits are enforced **per Node process** (in-memory). **With `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`**, the same limit is enforced **globally** via [`@upstash/ratelimit`](https://github.com/upstash/ratelimit-js).
+
+### Browser / CORS
+
+If you call the JSON APIs from a browser on another origin, set **`LEADS_API_CORS_ORIGIN`** to that origin (exact string). Preflight **`OPTIONS`** is supported on both routes.
 
 ### Partner logo uploads
 
-Admins can upload **PNG / JPEG / WebP** (max **2 MB**) on **`/admin/partners/[id]`**; files are written to **`public/uploads/partners/`**. On ephemeral serverless filesystems, uploads may not persist across deploys — use a CDN or object storage for production, or paste an **`https://`** logo URL in the path field instead.
+Admins can upload **PNG / JPEG / WebP** (max **2 MB**) on **`/admin/partners/[id]`**. If **`BLOB_READ_WRITE_TOKEN`** is set (e.g. on Vercel), files are stored with [**Vercel Blob**](https://vercel.com/docs/storage/vercel-blob) and the returned **`https://`** URL is saved as `logoPath`. Otherwise files are written under **`public/uploads/partners/`** (fine for a single long-lived host; on ephemeral serverless disks, prefer Blob or paste an external **`https://`** URL).
 
 ## Notes
 
-- Partner **logos**: set `Partner.logoPath` in the admin partner editor or Prisma Studio to a path under `public/` or an `https://` URL.
 - **Schema migrations**: `prisma/migrations/` includes `contact_service_id` for linking contacts to services. Prefer `npm run db:migrate` in production after reviewing SQL; `db push` is fine for local iteration.
 - Email sending is **skipped** when no provider env vars are configured (see server logs in development).
