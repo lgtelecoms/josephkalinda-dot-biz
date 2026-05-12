@@ -1,5 +1,6 @@
 import { Target } from "lucide-react";
 import type { Messages } from "@/lib/i18n";
+import { MissionStatement } from "@/components/mission/MissionStatement";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/motion/Reveal";
 
@@ -31,34 +32,17 @@ export function Mission({ messages }: Props) {
                 <Target className="h-6 w-6" aria-hidden />
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-gold">
-                  {m.eyebrow}
-                </p>
                 <h2
                   id="mission-heading"
-                  className="mt-2 font-serif text-2xl font-semibold text-brand-ivory sm:text-3xl"
+                  className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-gold"
                 >
-                  {m.title}
+                  {m.eyebrow}
                 </h2>
-                <p className="mt-6 text-lg leading-relaxed text-brand-ivory/95 sm:text-xl">
-                  {m.lead}{" "}
-                  <strong className="font-semibold text-brand-gold">
-                    {m.emphasis1}
-                  </strong>{" "}
-                  {m.mid}{" "}
-                  <strong className="font-semibold text-brand-gold">
-                    {m.emphasis2}
-                  </strong>
-                  {m.comma1}{" "}
-                  <strong className="font-semibold text-brand-gold">
-                    {m.emphasis3}
-                  </strong>{" "}
-                  {m.comma2}{" "}
-                  <strong className="font-semibold text-brand-gold">
-                    {m.emphasis4}
-                  </strong>
-                  {m.end}
-                </p>
+                <MissionStatement
+                  messages={messages}
+                  tone="onDark"
+                  className="mt-4"
+                />
               </div>
             </div>
           </div>

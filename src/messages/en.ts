@@ -2,7 +2,7 @@ export const en = {
   meta: {
     title: "Joseph Kalinda | Development & Agricultural Transformation",
     description:
-      "Cabinet de conseil — Development and agricultural transformation consulting. Unlock your full potential with sustainable solutions across Africa.",
+      "Development and agricultural transformation consulting firm. Unlock your full potential with sustainable solutions that create value, autonomy, and community impact across Africa.",
     ogLocale: "en_US",
   },
   header: {
@@ -11,6 +11,7 @@ export const en = {
   },
   hero: {
     tagline: "Unlock Your Full Potential",
+    missionEyebrow: "Mission",
     firmLine1: "Development & Agricultural",
     firmHighlight: "Transformation",
     firmLine2: "Consulting Firm",
@@ -26,7 +27,7 @@ export const en = {
   },
   missionSection: {
     eyebrow: "Mission",
-    title: "Our mission",
+    openingLine: "Our mission:",
     lead: "To transform economic ideas into",
     emphasis1: "sustainable",
     mid: "solutions that create",

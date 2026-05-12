@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Globe, Mail, MapPin, Phone } from "lucide-react";
 import type { Messages } from "@/lib/i18n";
 import { HeroQr } from "@/components/hero/HeroQr";
+import { MissionStatement } from "@/components/mission/MissionStatement";
 import { CurvedDivider } from "@/components/ui/CurvedDivider";
 import { Reveal } from "@/components/motion/Reveal";
 
@@ -66,6 +67,18 @@ export function Hero({ messages }: Props) {
                   <p className="mt-1 font-sans text-sm font-medium uppercase tracking-[0.12em] text-brand-forest-muted sm:text-base">
                     {h.firmLine2}
                   </p>
+                </div>
+                <div className="mt-8 border-t border-brand-gold/25 pt-6">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-forest-muted">
+                    {h.missionEyebrow}
+                  </p>
+                  <div className="mt-3">
+                    <MissionStatement
+                      messages={messages}
+                      tone="onLight"
+                      compact
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -131,7 +144,7 @@ export function Hero({ messages }: Props) {
                 <div className="pointer-events-none absolute bottom-0 right-0 h-40 w-52 sm:h-48 sm:w-64 lg:h-56 lg:w-72">
                   <Image
                     src="/images/hero-plant.jpg"
-                    alt=""
+                    alt="Young plant sprouting from rich soil, symbolizing agricultural growth and transformation."
                     fill
                     className="object-cover object-center opacity-95"
                     sizes="(max-width: 1024px) 200px, 288px"

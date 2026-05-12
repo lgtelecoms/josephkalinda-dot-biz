@@ -15,6 +15,7 @@ type Props = {
 
 export function Contact({ messages }: Props) {
   const c = messages.contact;
+  const phone = messages.hero.contact.phone;
   const reduce = useReducedMotion();
 
   return (
@@ -49,6 +50,9 @@ export function Contact({ messages }: Props) {
                   WhatsApp
                 </p>
                 <p className="mt-2 font-semibold">{c.whatsappCta}</p>
+                <p className="mt-2 text-sm font-medium text-brand-ivory/90">
+                  {phone}
+                </p>
               </div>
             </motion.a>
           </Reveal>

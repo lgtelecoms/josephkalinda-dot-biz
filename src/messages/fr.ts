@@ -13,7 +13,8 @@ export const fr: Messages = {
     skipToContent: "Aller au contenu",
   },
   hero: {
-    tagline: "Libérez votre plein potentiel",
+    tagline: "Libérez Votre Plein Potentiel",
+    missionEyebrow: "Mission",
     firmLine1: "Cabinet de conseil en",
     firmHighlight: "développement",
     firmLine2: "& transformation agricole",
@@ -29,7 +30,7 @@ export const fr: Messages = {
   },
   missionSection: {
     eyebrow: "Mission",
-    title: "Notre mission",
+    openingLine: "Notre mission :",
     lead: "Transformer les idées économiques en",
     emphasis1: "solutions durables",
     mid: "qui créent de la",
@@ -65,7 +66,7 @@ export const fr: Messages = {
       },
       {
         key: "management",
-        title: "Gestion de la transformation agricole",
+        title: "Gestion de projets pour la transformation agricole",
         description:
           "Aligner parties prenantes, opérations et investissements autour d’une croissance inclusive.",
       },

@@ -27,7 +27,9 @@ Open [http://localhost:3000](http://localhost:3000) — `/` redirects to `/en` o
 - `npm run start` — serve production build  
 - `npm run lint` — ESLint  
 
-## Structure
+## Social previews
+
+Localized Open Graph images are generated at `/{locale}/opengraph-image` (see `src/app/[locale]/opengraph-image.tsx`). Metadata references these for Open Graph and Twitter cards.
 
 - `src/app/[locale]/` — localized home (`en`, `fr`)  
 - `src/messages/` — copy for each locale  

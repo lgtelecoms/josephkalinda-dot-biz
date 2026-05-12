@@ -39,11 +39,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: "Joseph Kalinda",
       locale: m.meta.ogLocale,
       type: "website",
+      images: [
+        {
+          url: `/${params.locale}/opengraph-image`,
+          width: 1200,
+          height: 630,
+          alt: "Joseph Kalinda",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: m.meta.title,
       description: m.meta.description,
+      images: [`/${params.locale}/opengraph-image`],
     },
   };
 }
