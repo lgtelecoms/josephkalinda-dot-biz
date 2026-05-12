@@ -10,6 +10,9 @@ import {
   createConsultationBooking,
   createContactSubmission,
 } from "@/lib/submissions";
+import { randomBytes } from "crypto";
+import { mkdir, writeFile } from "fs/promises";
+import { join } from "path";
 
 export type FormState = { success: boolean; error?: string };
 
@@ -218,4 +221,49 @@ export async function updatePartnerRecord(
   revalidatePath("/admin/partners");
   revalidatePath("/en");
   revalidatePath("/fr");
+}
+
+const UPLOAD_MIME_TO_EXT: Record<string, string> = {
+  "image/png": ".png",
+  "image/jpeg": ".jpg",
+  "image/jpg": ".jpg",
+  "image/webp": ".webp",
+};
+
+export async function uploadPartnerLogo(
+  formData: FormData
+): Promise<{ ok: true; path: string } | { ok: false; error: string }> {
+  try {
+    await requireAdminSession();
+  } catch {
+    return { ok: false, error: "Unauthorized." };
+  }
+
+  const file = formData.get("file");
+  if (!file || typeof file === "string" || !("arrayBuffer" in file)) {
+    return { ok: false, error: "Choose an image file first." };
+  }
+
+  const f = file as File;
+  if (f.size > 2 * 1024 * 1024) {
+    return { ok: false, error: "File too large (max 2 MB)." };
+  }
+
+  const ext = UPLOAD_MIME_TO_EXT[f.type];
+  if (!ext) {
+    return { ok: false, error: "Use PNG, JPEG, or WebP only." };
+  }
+
+  const buf = Buffer.from(await f.arrayBuffer());
+  if (buf.length === 0) {
+    return { ok: false, error: "Empty file." };
+  }
+
+  const filename = `${Date.now()}-${randomBytes(6).toString("hex")}${ext}`;
+  const dir = join(process.cwd(), "public", "uploads", "partners");
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, filename), buf);
+
+  const publicPath = `/uploads/partners/${filename}`;
+  return { ok: true, path: publicPath };
 }

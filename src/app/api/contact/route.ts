@@ -2,8 +2,30 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { contactApiJsonSchema } from "@/lib/validations";
 import { createContactSubmission } from "@/lib/submissions";
+import {
+  getLeadsClientIp,
+  leadsRateLimitMax,
+  validateLeadsApiSecret,
+} from "@/lib/leads-api";
+import { checkSimpleRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  const authBlock = validateLeadsApiSecret(request);
+  if (authBlock) return authBlock;
+
+  const ip = getLeadsClientIp(request);
+  const limit = leadsRateLimitMax();
+  const rl = checkSimpleRateLimit(`contact:${ip}`, limit, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Too many requests." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rl.retryAfterSec) },
+      }
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();

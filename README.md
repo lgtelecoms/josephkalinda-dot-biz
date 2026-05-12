@@ -19,6 +19,8 @@ Copy `.env.example` to `.env` and fill values:
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Seeded admin user (used by `prisma db seed`) |
 | `EMAIL_FROM`, `EMAIL_TO`, `RESEND_API_KEY` | Transactional email (see **Email** below) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | Optional SMTP when not using Resend |
+| `LEADS_API_SECRET` | If set, required on `POST /api/contact` and `POST /api/booking` (`x-leads-secret` or `Authorization: Bearer`) |
+| `LEADS_RATE_LIMIT_PER_MINUTE` | Per-IP JSON rate limit per route instance (default `30`) |
 | `NEXT_PUBLIC_SITE_URL` | Canonical URL for metadata and QR codes |
 
 ## Setup
@@ -75,7 +77,20 @@ npm run dev
 - **`POST /api/contact`** — body must match `contactApiJsonSchema` (see `src/lib/validations.ts`): includes `consent: true`, optional `serviceId`, optional `serviceInterest` (free text when no catalog id), optional anti-spam field `website` (must be empty).
 - **`POST /api/booking`** — body must match `bookingApiJsonSchema`; optional honeypot `website` (must be empty).
 
-Responses: **`200`** `{ "ok": true }`, **`400`** invalid JSON, **`422`** validation error (with `details` when Zod fails).
+Responses: **`200`** `{ "ok": true }`, **`400`** invalid JSON, **`401`** when `LEADS_API_SECRET` is set but the request is not authenticated, **`422`** validation error (with `details` when Zod fails), **`429`** rate limit exceeded (`Retry-After` header, seconds).
+
+### Securing the lead APIs
+
+Set **`LEADS_API_SECRET`** in production and send the same value on every `POST` as either:
+
+- Header **`x-leads-secret: <your-secret>`**, or  
+- Header **`Authorization: Bearer <your-secret>`**
+
+Optional **`LEADS_RATE_LIMIT_PER_MINUTE`** (default **30**) configures a simple per-IP fixed window for both `/api/contact` and `/api/booking` on each server instance. For global limits, put a reverse proxy or Redis-based limiter in front of the app.
+
+### Partner logo uploads
+
+Admins can upload **PNG / JPEG / WebP** (max **2 MB**) on **`/admin/partners/[id]`**; files are written to **`public/uploads/partners/`**. On ephemeral serverless filesystems, uploads may not persist across deploys — use a CDN or object storage for production, or paste an **`https://`** logo URL in the path field instead.
 
 ## Notes
 

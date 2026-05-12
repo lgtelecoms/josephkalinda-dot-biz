@@ -31,3 +31,7 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# uploaded partner logos (keep directory via .gitkeep)
+/public/uploads/partners/*
+!/public/uploads/partners/.gitkeep

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Partner } from "@prisma/client";
 import { partnerAdminFormSchema } from "@/lib/validations";
-import { updatePartnerRecord } from "@/server/actions";
+import { updatePartnerRecord, uploadPartnerLogo } from "@/server/actions";
 
 type Props = {
   partner: Partner;
@@ -13,7 +13,14 @@ type Props = {
 export function PartnerEditForm({ partner }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [uploadPending, startUpload] = useTransition();
   const [message, setMessage] = useState("");
+  const [logoPath, setLogoPath] = useState(partner.logoPath ?? "");
+  const [file, setFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    setLogoPath(partner.logoPath ?? "");
+  }, [partner.logoPath]);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -52,6 +59,26 @@ export function PartnerEditForm({ partner }: Props) {
     });
   }
 
+  function onUploadClick() {
+    if (!file) {
+      setMessage("Choose a PNG, JPEG, or WebP file first.");
+      return;
+    }
+    setMessage("");
+    const fd = new FormData();
+    fd.set("file", file);
+    startUpload(async () => {
+      const res = await uploadPartnerLogo(fd);
+      if (res.ok) {
+        setLogoPath(res.path);
+        setFile(null);
+        setMessage("Logo uploaded — click Save changes to persist on the partner record.");
+      } else {
+        setMessage(res.error);
+      }
+    });
+  }
+
   return (
     <form
       onSubmit={onSubmit}
@@ -71,14 +98,42 @@ export function PartnerEditForm({ partner }: Props) {
           className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
         />
       </label>
-      <label className="block text-sm font-medium text-slate-700">
-        Logo path (e.g. /partners/logo.svg or https://…)
-        <input
-          name="logoPath"
-          defaultValue={partner.logoPath ?? ""}
-          className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-        />
-      </label>
+
+      <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-4">
+        <p className="text-sm font-medium text-slate-800">Partner logo</p>
+        <p className="mt-1 text-xs text-slate-600">
+          Upload PNG, JPEG, or WebP (max 2 MB). Files are stored under{" "}
+          <code className="rounded bg-white px-1">/public/uploads/partners/</code>.
+          On serverless hosts without a persistent disk, prefer an external URL in
+          the path field instead.
+        </p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="text-sm"
+          />
+          <button
+            type="button"
+            disabled={uploadPending}
+            onClick={onUploadClick}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+          >
+            {uploadPending ? "Uploading…" : "Upload file"}
+          </button>
+        </div>
+        <label className="mt-4 block text-sm font-medium text-slate-700">
+          Logo path (auto-filled after upload, or paste a URL)
+          <input
+            name="logoPath"
+            value={logoPath}
+            onChange={(e) => setLogoPath(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+          />
+        </label>
+      </div>
+
       <label className="block text-sm font-medium text-slate-700">
         Website URL
         <input
