@@ -105,15 +105,12 @@ export function ContactForm({ locale, messages, services }: Props) {
           <label className="block text-sm font-medium text-brand-forest-deep">
             {f.serviceInterest}
             <select
-              name="serviceInterest"
+              name="serviceId"
               className="mt-1 w-full rounded-xl border border-brand-forest-deep/15 bg-white px-3 py-2 text-sm shadow-sm outline-none ring-brand-gold/40 focus:ring-2"
             >
               <option value="">{f.servicePlaceholder}</option>
               {services.map((s) => (
-                <option
-                  key={s.id}
-                  value={locale === "fr" ? s.titleFr : s.titleEn}
-                >
+                <option key={s.id} value={s.id}>
                   {locale === "fr" ? s.titleFr : s.titleEn}
                 </option>
               ))}

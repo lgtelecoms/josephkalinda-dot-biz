@@ -5,8 +5,11 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { notifyNewBooking, notifyNewContact } from "@/lib/email";
 import { bookingFormSchema, contactFormSchema } from "@/lib/validations";
+import {
+  createConsultationBooking,
+  createContactSubmission,
+} from "@/lib/submissions";
 
 export type FormState = { success: boolean; error?: string };
 
@@ -29,7 +32,7 @@ export async function submitContactForm(
     phone: formData.get("phone"),
     country: formData.get("country"),
     languagePref: formData.get("languagePref"),
-    serviceInterest: formData.get("serviceInterest"),
+    serviceId: formData.get("serviceId"),
     message: formData.get("message"),
     consent: formData.get("consent"),
   };
@@ -43,17 +46,14 @@ export async function submitContactForm(
   }
 
   try {
-    await prisma.contactSubmission.create({
-      data: {
-        name: parsed.data.name,
-        email: parsed.data.email,
-        phone: parsed.data.phone ?? null,
-        country: parsed.data.country,
-        languagePref: parsed.data.languagePref,
-        serviceInterest: parsed.data.serviceInterest ?? null,
-        message: parsed.data.message,
-        consent: true,
-      },
+    await createContactSubmission({
+      name: parsed.data.name,
+      email: parsed.data.email,
+      phone: parsed.data.phone,
+      country: parsed.data.country,
+      languagePref: parsed.data.languagePref,
+      message: parsed.data.message,
+      serviceId: parsed.data.serviceId ?? null,
     });
   } catch {
     return {
@@ -61,16 +61,6 @@ export async function submitContactForm(
       error: "We could not save your message. Please try again shortly.",
     };
   }
-
-  await notifyNewContact({
-    name: parsed.data.name,
-    email: parsed.data.email,
-    phone: parsed.data.phone,
-    country: parsed.data.country,
-    languagePref: parsed.data.languagePref,
-    serviceInterest: parsed.data.serviceInterest,
-    message: parsed.data.message,
-  });
 
   revalidatePath("/admin/contacts");
   revalidatePath("/admin/dashboard");
@@ -107,19 +97,17 @@ export async function submitBookingForm(
   }
 
   try {
-    await prisma.consultationBooking.create({
-      data: {
-        fullName: parsed.data.fullName,
-        email: parsed.data.email,
-        whatsapp: parsed.data.whatsapp,
-        country: parsed.data.country,
-        city: parsed.data.city,
-        preferredDate: parsed.data.preferredDate,
-        preferredTime: parsed.data.preferredTime,
-        topic: parsed.data.topic,
-        languagePref: parsed.data.languagePref,
-        message: parsed.data.message ?? null,
-      },
+    await createConsultationBooking({
+      fullName: parsed.data.fullName,
+      email: parsed.data.email,
+      whatsapp: parsed.data.whatsapp,
+      country: parsed.data.country,
+      city: parsed.data.city,
+      preferredDate: parsed.data.preferredDate,
+      preferredTime: parsed.data.preferredTime,
+      topic: parsed.data.topic,
+      languagePref: parsed.data.languagePref,
+      message: parsed.data.message,
     });
   } catch {
     return {
@@ -127,19 +115,6 @@ export async function submitBookingForm(
       error: "We could not save your request. Please try again shortly.",
     };
   }
-
-  await notifyNewBooking({
-    fullName: parsed.data.fullName,
-    email: parsed.data.email,
-    whatsapp: parsed.data.whatsapp,
-    country: parsed.data.country,
-    city: parsed.data.city,
-    preferredDate: parsed.data.preferredDate,
-    preferredTime: parsed.data.preferredTime,
-    topic: parsed.data.topic,
-    languagePref: parsed.data.languagePref,
-    message: parsed.data.message,
-  });
 
   revalidatePath("/admin/bookings");
   revalidatePath("/admin/dashboard");
@@ -195,12 +170,16 @@ export async function toggleServiceActive(id: string, active: boolean) {
   await requireAdminSession();
   await prisma.service.update({ where: { id }, data: { active } });
   revalidatePath("/admin/services");
+  revalidatePath("/en");
+  revalidatePath("/fr");
 }
 
 export async function togglePartnerActive(id: string, active: boolean) {
   await requireAdminSession();
   await prisma.partner.update({ where: { id }, data: { active } });
   revalidatePath("/admin/partners");
+  revalidatePath("/en");
+  revalidatePath("/fr");
 }
 
 export async function updateServiceRecord(
@@ -218,6 +197,8 @@ export async function updateServiceRecord(
   await requireAdminSession();
   await prisma.service.update({ where: { id }, data });
   revalidatePath("/admin/services");
+  revalidatePath("/en");
+  revalidatePath("/fr");
 }
 
 export async function updatePartnerRecord(
@@ -235,4 +216,6 @@ export async function updatePartnerRecord(
   await requireAdminSession();
   await prisma.partner.update({ where: { id }, data });
   revalidatePath("/admin/partners");
+  revalidatePath("/en");
+  revalidatePath("/fr");
 }

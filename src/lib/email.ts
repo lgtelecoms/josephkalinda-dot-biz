@@ -1,21 +1,31 @@
+import nodemailer from "nodemailer";
+
 type EmailPayload = {
   subject: string;
   html: string;
   text?: string;
 };
 
-export async function sendTransactionalEmail(payload: EmailPayload) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
-  const to = process.env.EMAIL_TO;
+function smtpConfigured() {
+  return Boolean(
+    process.env.SMTP_HOST &&
+      process.env.EMAIL_FROM &&
+      process.env.EMAIL_TO
+  );
+}
 
-  if (!apiKey || !from || !to) {
-    if (process.env.NODE_ENV === "development") {
-      console.info("[email] Skipping send (missing RESEND_API_KEY / EMAIL_FROM / EMAIL_TO)");
-      console.info("[email] Subject:", payload.subject);
-    }
-    return { ok: true as const, skipped: true as const };
-  }
+function resendConfigured() {
+  return Boolean(
+    process.env.RESEND_API_KEY &&
+      process.env.EMAIL_FROM &&
+      process.env.EMAIL_TO
+  );
+}
+
+async function sendViaResend(payload: EmailPayload) {
+  const apiKey = process.env.RESEND_API_KEY!;
+  const from = process.env.EMAIL_FROM!;
+  const to = process.env.EMAIL_TO!;
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -38,7 +48,60 @@ export async function sendTransactionalEmail(payload: EmailPayload) {
     return { ok: false as const, error: "Email provider rejected the request." };
   }
 
-  return { ok: true as const, skipped: false as const };
+  return { ok: true as const, skipped: false as const, via: "resend" as const };
+}
+
+async function sendViaSmtp(payload: EmailPayload) {
+  const host = process.env.SMTP_HOST!;
+  const port = Number(process.env.SMTP_PORT || "587");
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth:
+      user && pass
+        ? {
+            user,
+            pass,
+          }
+        : undefined,
+  });
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: process.env.EMAIL_TO,
+    subject: payload.subject,
+    html: payload.html,
+    text: payload.text,
+  });
+
+  return { ok: true as const, skipped: false as const, via: "smtp" as const };
+}
+
+export async function sendTransactionalEmail(payload: EmailPayload) {
+  if (resendConfigured()) {
+    return sendViaResend(payload);
+  }
+
+  if (smtpConfigured()) {
+    try {
+      return await sendViaSmtp(payload);
+    } catch (e) {
+      console.error("[email] SMTP error", e);
+      return { ok: false as const, error: "SMTP send failed." };
+    }
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.info(
+      "[email] Skipping send (configure RESEND_API_KEY or SMTP_HOST + EMAIL_FROM + EMAIL_TO)"
+    );
+    console.info("[email] Subject:", payload.subject);
+  }
+  return { ok: true as const, skipped: true as const, via: "none" as const };
 }
 
 export async function notifyNewContact(data: {
@@ -48,6 +111,7 @@ export async function notifyNewContact(data: {
   country: string;
   languagePref: string;
   serviceInterest?: string | null;
+  serviceId?: string | null;
   message: string;
 }) {
   const subject = `New contact: ${data.name}`;
@@ -58,6 +122,7 @@ export async function notifyNewContact(data: {
     <p><strong>Phone:</strong> ${escapeHtml(data.phone ?? "—")}</p>
     <p><strong>Country:</strong> ${escapeHtml(data.country)}</p>
     <p><strong>Language:</strong> ${escapeHtml(data.languagePref)}</p>
+    <p><strong>Service id:</strong> ${escapeHtml(data.serviceId ?? "—")}</p>
     <p><strong>Service interest:</strong> ${escapeHtml(data.serviceInterest ?? "—")}</p>
     <p><strong>Message:</strong></p>
     <pre style="white-space:pre-wrap;font-family:system-ui">${escapeHtml(data.message)}</pre>

@@ -7,6 +7,7 @@ export default async function AdminContactsPage() {
     () =>
       prisma.contactSubmission.findMany({
         orderBy: { createdAt: "desc" },
+        include: { service: true },
       }),
     []
   );
@@ -28,6 +29,7 @@ export default async function AdminContactsPage() {
               <th className="px-4 py-3">Email</th>
               <th className="px-4 py-3">Country</th>
               <th className="px-4 py-3">Lang</th>
+              <th className="px-4 py-3">Service</th>
               <th className="px-4 py-3">Read</th>
               <th className="px-4 py-3">Actions</th>
             </tr>
@@ -35,7 +37,7 @@ export default async function AdminContactsPage() {
           <tbody className="divide-y divide-slate-100">
             {rows.length === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-slate-500" colSpan={7}>
+                <td className="px-4 py-8 text-center text-slate-500" colSpan={8}>
                   No contact submissions yet.
                 </td>
               </tr>
@@ -49,6 +51,9 @@ export default async function AdminContactsPage() {
                   <td className="px-4 py-3 text-slate-700">{r.email}</td>
                   <td className="px-4 py-3 text-slate-700">{r.country}</td>
                   <td className="px-4 py-3 text-slate-700">{r.languagePref}</td>
+                  <td className="px-4 py-3 text-slate-700">
+                    {r.service?.titleEn ?? r.serviceInterest ?? "—"}
+                  </td>
                   <td className="px-4 py-3 text-slate-700">{r.read ? "Yes" : "No"}</td>
                   <td className="px-4 py-3">
                     <ContactRowActions id={r.id} read={r.read} />

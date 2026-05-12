@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { ToggleActiveButton } from "@/components/admin/ToggleActiveButton";
 import { withDb } from "@/lib/db-safe";
@@ -36,7 +37,13 @@ export default async function AdminPartnersPage() {
                   Logo: {p.logoPath ?? "—"} · Site: {p.websiteUrl ?? "—"}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href={`/admin/partners/${p.id}`}
+                  className="text-xs font-semibold text-slate-700 underline-offset-2 hover:underline"
+                >
+                  Edit
+                </Link>
                 <span className="text-xs font-medium text-slate-600">
                   {p.active ? "Active" : "Hidden"}
                 </span>
