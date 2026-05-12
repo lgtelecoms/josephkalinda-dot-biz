@@ -11,11 +11,11 @@ type Props = {
 
 export function HeroQr({ scanLabel, className }: Props) {
   return (
-    <div className={cn("relative flex flex-col items-center gap-2", className)}>
-      <p className="font-serif text-lg italic text-brand-gold sm:text-xl">
+    <div className={cn("relative flex flex-col items-center gap-3", className)}>
+      <p className="text-center text-[11px] font-semibold uppercase tracking-[0.28em] text-brand-gold sm:text-xs">
         {scanLabel}
       </p>
-      <div className="relative rounded-2xl border-2 border-brand-gold/60 bg-white p-3 shadow-brand-lg">
+      <div className="relative rounded-2xl border border-brand-gold/50 bg-white p-3 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.35)] ring-1 ring-white/60">
         <QRCodeSVG
           value={SITE_URL}
           size={132}

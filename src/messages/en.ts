@@ -26,6 +26,7 @@ export const en = {
     scanHint: "Scan me!",
     ctaContact: "Contact",
     ctaBook: "Book consultation",
+    panelEyebrow: "Direct channels",
     contact: {
       phone: "+27 61 007 8595",
       email: "info@josephkalinda.biz",

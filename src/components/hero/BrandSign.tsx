@@ -1,4 +1,5 @@
 import { Great_Vibes } from "next/font/google";
+import { cn } from "@/lib/cn";
 
 const kalindaScript = Great_Vibes({
   weight: "400",
@@ -9,14 +10,20 @@ const kalindaScript = Great_Vibes({
 type Props = {
   headingId: string;
   tagline: string;
+  className?: string;
 };
 
 /**
  * Card-style lockup: bordered nameplate, script surname, integrated tagline bar (matches business card).
  */
-export function BrandSign({ headingId, tagline }: Props) {
+export function BrandSign({ headingId, tagline, className }: Props) {
   return (
-    <div className="inline-block border-2 border-brand-forest-deep shadow-sm">
+    <div
+      className={cn(
+        "inline-block border-2 border-brand-forest-deep shadow-[0_12px_40px_-16px_rgba(6,51,33,0.18)]",
+        className
+      )}
+    >
       <div className="bg-white px-6 py-4 sm:px-8 sm:py-5">
         <h1
           id={headingId}
