@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { withDb } from "@/lib/db-safe";
 import { PartnerEditForm } from "@/components/admin/PartnerEditForm";
+import { getPartnerLogoStorageMode } from "@/lib/partner-logo-storage";
 
 type Props = { params: { id: string } };
 
@@ -32,7 +33,7 @@ export default async function AdminPartnerEditPage({ params }: Props) {
       </div>
       <PartnerEditForm
         partner={partner}
-        blobStorage={Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim())}
+        storageMode={getPartnerLogoStorageMode()}
       />
     </div>
   );

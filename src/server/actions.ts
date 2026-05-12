@@ -5,14 +5,23 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { bookingFormSchema, contactFormSchema } from "@/lib/validations";
+import {
+  bookingFormSchema,
+  contactFormSchema,
+  contentKeySchema,
+  contentLocaleSchema,
+  contentValueSchema,
+} from "@/lib/validations";
+import {
+  partnerLogoExtension,
+  persistPartnerLogoImage,
+} from "@/lib/partner-logo-storage";
 import {
   createConsultationBooking,
   createContactSubmission,
 } from "@/lib/submissions";
-import { randomBytes } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
-import { join } from "path";
+import { checkLeadsRateLimit } from "@/lib/rate-limit-leads";
+import { getRequestIpFromHeaders } from "@/lib/request-ip";
 
 export type FormState = { success: boolean; error?: string };
 
@@ -27,6 +36,15 @@ export async function submitContactForm(
 ): Promise<FormState> {
   if (honeypotTripped(formData)) {
     return { success: false, error: "Unable to submit this form." };
+  }
+
+  const ip = getRequestIpFromHeaders();
+  const rl = await checkLeadsRateLimit(`contact:${ip}`);
+  if (!rl.ok) {
+    return {
+      success: false,
+      error: `Too many submissions. Please wait ${rl.retryAfterSec}s and try again.`,
+    };
   }
 
   const raw = {
@@ -76,6 +94,15 @@ export async function submitBookingForm(
 ): Promise<FormState> {
   if (honeypotTripped(formData)) {
     return { success: false, error: "Unable to submit this form." };
+  }
+
+  const ip = getRequestIpFromHeaders();
+  const rl = await checkLeadsRateLimit(`booking:${ip}`);
+  if (!rl.ok) {
+    return {
+      success: false,
+      error: `Too many requests. Please wait ${rl.retryAfterSec}s and try again.`,
+    };
   }
 
   const raw = {
@@ -223,13 +250,6 @@ export async function updatePartnerRecord(
   revalidatePath("/fr");
 }
 
-const UPLOAD_MIME_TO_EXT: Record<string, string> = {
-  "image/png": ".png",
-  "image/jpeg": ".jpg",
-  "image/jpg": ".jpg",
-  "image/webp": ".webp",
-};
-
 export async function uploadPartnerLogo(
   formData: FormData
 ): Promise<{ ok: true; path: string } | { ok: false; error: string }> {
@@ -249,8 +269,7 @@ export async function uploadPartnerLogo(
     return { ok: false, error: "File too large (max 2 MB)." };
   }
 
-  const ext = UPLOAD_MIME_TO_EXT[f.type];
-  if (!ext) {
+  if (!partnerLogoExtension(f.type)) {
     return { ok: false, error: "Use PNG, JPEG, or WebP only." };
   }
 
@@ -259,21 +278,81 @@ export async function uploadPartnerLogo(
     return { ok: false, error: "Empty file." };
   }
 
-  const filename = `partner-${Date.now()}-${randomBytes(6).toString("hex")}${ext}`;
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-  if (blobToken) {
-    const { put } = await import("@vercel/blob");
-    const blob = await put(`partners/${filename}`, buf, {
-      access: "public",
-      token: blobToken,
-    });
-    return { ok: true, path: blob.url };
+  try {
+    const { publicUrl } = await persistPartnerLogoImage(buf, f.type);
+    return { ok: true, path: publicUrl };
+  } catch {
+    return { ok: false, error: "Upload failed. Check storage configuration." };
+  }
+}
+
+export type ContentActionState = { ok: boolean; error?: string };
+
+export async function updateContentEntryValue(
+  id: string,
+  value: string
+): Promise<ContentActionState> {
+  try {
+    await requireAdminSession();
+  } catch {
+    return { ok: false, error: "Unauthorized." };
   }
 
-  const dir = join(process.cwd(), "public", "uploads", "partners");
-  await mkdir(dir, { recursive: true });
-  await writeFile(join(dir, filename), buf);
+  const parsed = contentValueSchema.safeParse(value);
+  if (!parsed.success) {
+    return { ok: false, error: "Value must be 1–8000 characters." };
+  }
 
-  const publicPath = `/uploads/partners/${filename}`;
-  return { ok: true, path: publicPath };
+  try {
+    await prisma.contentEntry.update({
+      where: { id },
+      data: { value: parsed.data },
+    });
+  } catch {
+    return { ok: false, error: "Could not save." };
+  }
+
+  revalidatePath("/admin/content");
+  revalidatePath("/en");
+  revalidatePath("/fr");
+  return { ok: true };
+}
+
+export async function createContentEntryRecord(
+  key: string,
+  locale: string,
+  value: string
+): Promise<ContentActionState> {
+  try {
+    await requireAdminSession();
+  } catch {
+    return { ok: false, error: "Unauthorized." };
+  }
+
+  const k = contentKeySchema.safeParse(key);
+  const loc = contentLocaleSchema.safeParse(locale);
+  const v = contentValueSchema.safeParse(value);
+  if (!k.success || !loc.success || !v.success) {
+    return {
+      ok: false,
+      error: "Invalid key (lowercase snake_case), locale (en|fr), or value length.",
+    };
+  }
+
+  try {
+    await prisma.contentEntry.upsert({
+      where: {
+        key_locale: { key: k.data, locale: loc.data },
+      },
+      create: { key: k.data, locale: loc.data, value: v.data },
+      update: { value: v.data },
+    });
+  } catch {
+    return { ok: false, error: "Could not create or update entry." };
+  }
+
+  revalidatePath("/admin/content");
+  revalidatePath("/en");
+  revalidatePath("/fr");
+  return { ok: true };
 }

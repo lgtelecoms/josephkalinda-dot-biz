@@ -23,7 +23,8 @@ Copy `.env.example` to `.env` and fill values:
 | `LEADS_RATE_LIMIT_PER_MINUTE` | Max JSON lead posts per client IP per **60s window** (default `30`). Used by in-memory limiter, or by Upstash when configured below. |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Optional [Upstash Redis](https://upstash.com/) — enables **shared** rate limits across all instances (overrides in-memory). |
 | `LEADS_API_CORS_ORIGIN` | Optional single origin (e.g. `https://zapier.com`) for browser `fetch` to the lead APIs — adds CORS headers and `OPTIONS` support. |
-| `BLOB_READ_WRITE_TOKEN` | Optional [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) — partner logo uploads go to Blob (public URL) instead of `public/uploads/`. |
+| `BLOB_READ_WRITE_TOKEN` | Optional [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) — partner logos (**first priority** when set). |
+| `S3_BUCKET`, `S3_PUBLIC_BASE_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Optional **S3-compatible** storage for partner logos (used when Blob is unset). Optional: `S3_REGION` (default `us-east-1`), `S3_ENDPOINT` + `S3_FORCE_PATH_STYLE=true` for MinIO. |
 | `NEXT_PUBLIC_SITE_URL` | Canonical URL for metadata and QR codes |
 
 ## Setup
@@ -39,6 +40,19 @@ npm run db:seed
 
 For migration-based workflows you can use `npm run db:migrate` instead of `db push` once you configure migrations locally.
 
+### Local PostgreSQL (Docker)
+
+```bash
+docker compose up -d
+# DATABASE_URL=postgresql://postgres:postgres@localhost:5432/josephkalinda
+npx prisma migrate deploy
+npm run db:seed
+```
+
+## Continuous integration
+
+GitHub Actions (`.github/workflows/ci.yml`) runs `prisma migrate deploy`, `npm run lint`, and `npm run build` against a disposable Postgres service.
+
 ## Development
 
 ```bash
@@ -47,7 +61,7 @@ npm run dev
 
 - Public site: `/` redirects to `/en` or `/fr` (cookie `NEXT_LOCALE`).
 - Consultation booking: `/en/book`, `/fr/book`.
-- Admin: `/admin/login` → `/admin/dashboard`, `/admin/contacts`, `/admin/bookings`, `/admin/services`, `/admin/partners`, plus **Edit** at `/admin/services/[id]` and `/admin/partners/[id]`.
+- Admin: `/admin/login` → dashboard, contacts, bookings, services, partners, **`/admin/content`** (CMS strings), plus edit routes for services and partners.
 
 ## Scripts
 
@@ -66,7 +80,7 @@ npm run dev
 
 - **Public**: `[locale]` routes, DB-driven services/partners, server actions for contact + booking forms, transactional email (Resend or SMTP).
 - **HTTP API** (JSON `POST`): `/api/contact` and `/api/booking` mirror the same validation and persistence as the website forms (for integrations, Zapier, mobile apps, etc.).
-- **Admin**: NextAuth credentials, JWT sessions, protected `/admin/*` (middleware), dashboards for leads and CMS toggles.
+- **Admin**: NextAuth credentials, JWT sessions, protected `/admin/*` (middleware), dashboards, CMS for `ContentEntry`, service/partner editors.
 - **Content**: `ContentEntry` table for navigation labels (seeded); marketing copy fallbacks live in `src/messages/*`.
 
 ## Email delivery
@@ -89,7 +103,7 @@ Set **`LEADS_API_SECRET`** in production and send the same value on every `POST`
 - Header **`x-leads-secret: <your-secret>`**, or  
 - Header **`Authorization: Bearer <your-secret>`**
 
-Optional **`LEADS_RATE_LIMIT_PER_MINUTE`** (default **30**) configures the sliding window size. **Without Upstash**, limits are enforced **per Node process** (in-memory). **With `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`**, the same limit is enforced **globally** via [`@upstash/ratelimit`](https://github.com/upstash/ratelimit-js).
+Optional **`LEADS_RATE_LIMIT_PER_MINUTE`** (default **30**) configures the sliding window size. **Without Upstash**, limits are enforced **per Node process** (in-memory). **With `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`**, the same limit is enforced **globally** via [`@upstash/ratelimit`](https://github.com/upstash/ratelimit-js). The same per-IP counters apply to **`POST /api/contact`**, **`POST /api/booking`**, and the **public contact / booking server actions** (shared `contact:` / `booking:` keys).
 
 ### Browser / CORS
 
@@ -97,7 +111,7 @@ If you call the JSON APIs from a browser on another origin, set **`LEADS_API_COR
 
 ### Partner logo uploads
 
-Admins can upload **PNG / JPEG / WebP** (max **2 MB**) on **`/admin/partners/[id]`**. If **`BLOB_READ_WRITE_TOKEN`** is set (e.g. on Vercel), files are stored with [**Vercel Blob**](https://vercel.com/docs/storage/vercel-blob) and the returned **`https://`** URL is saved as `logoPath`. Otherwise files are written under **`public/uploads/partners/`** (fine for a single long-lived host; on ephemeral serverless disks, prefer Blob or paste an external **`https://`** URL).
+Admins can upload **PNG / JPEG / WebP** (max **2 MB**) on **`/admin/partners/[id]`**. Storage priority: **Vercel Blob** (`BLOB_READ_WRITE_TOKEN`) → **S3-compatible** (`S3_*` when `S3_BUCKET`, keys, and `S3_PUBLIC_BASE_URL` are set; public reads must be allowed on uploaded keys, e.g. bucket policy or CloudFront) → **local** `public/uploads/partners/`.
 
 ## Notes
 

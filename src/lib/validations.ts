@@ -131,5 +131,14 @@ export const partnerAdminFormSchema = z.object({
   active: z.enum(["true", "false"]).transform((v) => v === "true"),
 });
 
+export const contentValueSchema = z.string().trim().min(1).max(8000);
+
+export const contentKeySchema = z
+  .string()
+  .trim()
+  .regex(/^[a-z][a-z0-9_]{0,62}$/, "Use lowercase letters, digits, underscores");
+
+export const contentLocaleSchema = z.enum(["en", "fr"]);
+
 export type ContactFormInput = z.infer<typeof contactFormSchema>;
 export type BookingFormInput = z.infer<typeof bookingFormSchema>;

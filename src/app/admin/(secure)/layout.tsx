@@ -7,6 +7,7 @@ const links = [
   { href: "/admin/bookings", label: "Bookings" },
   { href: "/admin/services", label: "Services" },
   { href: "/admin/partners", label: "Partners" },
+  { href: "/admin/content", label: "Content" },
 ];
 
 export default function AdminSecureLayout({ children }: { children: ReactNode }) {

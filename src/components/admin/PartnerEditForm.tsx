@@ -3,15 +3,16 @@
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Partner } from "@prisma/client";
+import type { PartnerLogoStorageMode } from "@/lib/partner-logo-storage";
 import { partnerAdminFormSchema } from "@/lib/validations";
 import { updatePartnerRecord, uploadPartnerLogo } from "@/server/actions";
 
 type Props = {
   partner: Partner;
-  blobStorage?: boolean;
+  storageMode: PartnerLogoStorageMode;
 };
 
-export function PartnerEditForm({ partner, blobStorage }: Props) {
+export function PartnerEditForm({ partner, storageMode }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [uploadPending, startUpload] = useTransition();
@@ -106,9 +107,11 @@ export function PartnerEditForm({ partner, blobStorage }: Props) {
           PNG, JPEG, or WebP — max 2 MB.
         </p>
         <p className="mt-1 text-xs text-slate-600">
-          {blobStorage
+          {storageMode === "blob"
             ? "Uploads go to Vercel Blob and return a stable public URL."
-            : "Files save under /public/uploads/partners/ on this host. For serverless or multi-instance production, set BLOB_READ_WRITE_TOKEN (Vercel Blob) or use an https:// URL in the path field."}
+            : storageMode === "s3"
+              ? "Uploads go to your S3-compatible bucket (see S3_* env vars)."
+              : "Files save under /public/uploads/partners/ on this host. For production serverless, configure Vercel Blob or S3, or paste an https:// URL."}
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
           <input
