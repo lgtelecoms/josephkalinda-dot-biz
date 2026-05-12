@@ -1,6 +1,7 @@
 "use client";
 
 import { Mail, MapPin, MessageCircle, Globe } from "lucide-react";
+import type { Service } from "@prisma/client";
 import type { Messages } from "@/lib/i18n";
 import { EMAIL, WHATSAPP_URL, SITE_URL } from "@/lib/site";
 import { Container } from "@/components/ui/Container";
@@ -8,12 +9,15 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Reveal } from "@/components/motion/Reveal";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/cn";
+import { ContactForm } from "@/components/forms/ContactForm";
 
 type Props = {
+  locale: "en" | "fr";
   messages: Messages;
+  services: Service[];
 };
 
-export function Contact({ messages }: Props) {
+export function Contact({ locale, messages, services }: Props) {
   const c = messages.contact;
   const phone = messages.hero.contact.phone;
   const reduce = useReducedMotion();
@@ -125,6 +129,7 @@ export function Contact({ messages }: Props) {
             </div>
           </div>
         </Reveal>
+        <ContactForm locale={locale} messages={messages} services={services} />
       </Container>
     </section>
   );

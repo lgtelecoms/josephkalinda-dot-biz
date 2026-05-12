@@ -13,6 +13,7 @@ export function Mission({ messages }: Props) {
 
   return (
     <section
+      id="mission"
       className="relative overflow-hidden border-b border-brand-gold/20 bg-gradient-to-br from-brand-forest-deep via-brand-forest-deep to-brand-forest-muted py-20 sm:py-24"
       aria-labelledby="mission-heading"
     >

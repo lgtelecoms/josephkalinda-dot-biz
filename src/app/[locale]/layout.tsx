@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getMessages, isLocale } from "@/lib/i18n";
-import { SiteHeader } from "@/components/SiteHeader";
+import { getMessages, isLocale, type Locale } from "@/lib/i18n";
+import { SiteHeader, type PublicNavLabels } from "@/components/SiteHeader";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_URL } from "@/lib/site";
+import { getContentMap, pickContent } from "@/lib/content";
+
+export const dynamic = "force-dynamic";
 
 type Props = {
   children: React.ReactNode;
   params: { locale: string };
 };
-
-export function generateStaticParams() {
-  return [{ locale: "en" }, { locale: "fr" }];
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isLocale(params.locale)) {
@@ -57,18 +56,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function LocaleLayout({ children, params }: Props) {
+export default async function LocaleLayout({ children, params }: Props) {
   if (!isLocale(params.locale)) {
     notFound();
   }
 
-  const messages = getMessages(params.locale);
+  const locale = params.locale as Locale;
+  const messages = getMessages(locale);
+  const content = await getContentMap(locale);
+
+  const nav: PublicNavLabels = {
+    home: pickContent(content, "nav_home", messages.nav.home),
+    services: pickContent(content, "nav_services", messages.nav.services),
+    mission: pickContent(content, "nav_mission", messages.nav.mission),
+    partners: pickContent(content, "nav_partners", messages.nav.partners),
+    contact: pickContent(content, "nav_contact", messages.nav.contact),
+    book: pickContent(content, "cta_book", messages.nav.book),
+  };
 
   return (
     <>
-      <JsonLd locale={params.locale} description={messages.meta.description} />
+      <JsonLd locale={locale} description={messages.meta.description} />
       <SiteHeader
-        locale={params.locale}
+        locale={locale}
         brand={messages.header.brand}
         skipLabel={messages.header.skipToContent}
         lang={{
@@ -76,6 +86,7 @@ export default function LocaleLayout({ children, params }: Props) {
           fr: messages.language.frShort,
           switchLabel: messages.language.switchTo,
         }}
+        nav={nav}
       />
       {children}
     </>

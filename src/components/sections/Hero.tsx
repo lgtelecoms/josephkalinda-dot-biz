@@ -1,7 +1,9 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { Globe, Mail, MapPin, Phone } from "lucide-react";
 import type { Messages } from "@/lib/i18n";
+import { WHATSAPP_URL } from "@/lib/site";
 import { HeroQr } from "@/components/hero/HeroQr";
 import { MissionStatement } from "@/components/mission/MissionStatement";
 import { CurvedDivider } from "@/components/ui/CurvedDivider";
@@ -9,6 +11,7 @@ import { Reveal } from "@/components/motion/Reveal";
 
 type Props = {
   messages: Messages;
+  locale: "en" | "fr";
 };
 
 function IconRow({
@@ -28,8 +31,9 @@ function IconRow({
   );
 }
 
-export function Hero({ messages }: Props) {
+export function Hero({ messages, locale }: Props) {
   const h = messages.hero;
+  const base = `/${locale}`;
 
   return (
     <section
@@ -79,6 +83,28 @@ export function Hero({ messages }: Props) {
                       compact
                     />
                   </div>
+                </div>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Link
+                    href={`${base}#contact`}
+                    className="inline-flex items-center justify-center rounded-full border border-brand-forest-deep/20 bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-brand-forest-deep shadow-sm transition hover:border-brand-gold/60 hover:shadow-brand"
+                  >
+                    {h.ctaContact}
+                  </Link>
+                  <Link
+                    href={WHATSAPP_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center rounded-full border border-brand-gold/50 bg-brand-forest-deep px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-white shadow-brand transition hover:bg-brand-forest-muted"
+                  >
+                    WhatsApp
+                  </Link>
+                  <Link
+                    href={`${base}/book`}
+                    className="inline-flex items-center justify-center rounded-full border border-brand-gold/50 bg-brand-ivory px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-brand-forest-deep shadow-sm transition hover:shadow-brand-lg"
+                  >
+                    {h.ctaBook}
+                  </Link>
                 </div>
               </div>
 

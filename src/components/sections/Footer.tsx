@@ -1,27 +1,54 @@
+import Link from "next/link";
 import { Facebook, Linkedin, Youtube } from "lucide-react";
+import type { Locale } from "@/lib/i18n";
 import type { Messages } from "@/lib/i18n";
 import { socialLinks } from "@/lib/site";
 import { Container } from "@/components/ui/Container";
 
 type Props = {
+  locale: Locale;
   messages: Messages;
 };
 
-export function Footer({ messages }: Props) {
+export function Footer({ locale, messages }: Props) {
   const f = messages.footer;
+  const n = messages.nav;
   const year = new Date().getFullYear();
+  const base = `/${locale}`;
+
+  const quick = [
+    { href: `${base}#services`, label: n.services },
+    { href: `${base}#mission`, label: n.mission },
+    { href: `${base}#partners`, label: n.partners },
+    { href: `${base}#contact`, label: n.contact },
+    { href: `${base}/book`, label: n.book },
+  ];
 
   return (
     <footer className="border-t border-brand-gold/25 bg-brand-forest-deep py-12 text-brand-ivory">
       <Container>
-        <div className="flex flex-col items-center justify-between gap-8 text-center sm:flex-row sm:text-left">
+        <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr]">
           <div>
             <p className="font-serif text-lg text-brand-gold">{f.tagline}</p>
             <p className="mt-2 text-sm text-brand-ivory/75">
               © {year} Joseph Kalinda · josephkalinda.biz
             </p>
+            <nav
+              className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-brand-ivory/85"
+              aria-label="Footer"
+            >
+              {quick.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="transition hover:text-brand-gold"
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </nav>
           </div>
-          <div className="flex flex-col items-center gap-3 sm:items-end">
+          <div className="flex flex-col items-start gap-3 lg:items-end">
             <p className="text-xs font-semibold uppercase tracking-widest text-brand-gold/90">
               {f.socialLabel}
             </p>
