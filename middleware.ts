@@ -17,10 +17,15 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    let token = null;
+    try {
+      token = await getToken({
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET,
+      });
+    } catch {
+      token = null;
+    }
     if (!token) {
       const url = request.nextUrl.clone();
       url.pathname = "/admin/login";
