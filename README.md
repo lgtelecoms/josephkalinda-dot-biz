@@ -1,2 +1,119 @@
-# josephkalinda-dot-biz
-joseph kalinda dot biz
+# Joseph Kalinda — josephkalinda.biz
+
+Full-stack multilingual marketing and lead platform for **Joseph Kalinda** (Next.js 14, TypeScript, Tailwind, Framer Motion, Prisma, PostgreSQL, NextAuth).
+
+## Prerequisites
+
+- Node.js 18+
+- PostgreSQL database
+
+## Environment
+
+Copy `.env.example` to `.env` and fill values:
+
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `NEXTAUTH_SECRET` | Random secret (32+ chars) for JWT signing |
+| `NEXTAUTH_URL` | Public site URL (e.g. `http://localhost:3000`) |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Seeded admin user (used by `prisma db seed`) |
+| `EMAIL_FROM`, `EMAIL_TO`, `RESEND_API_KEY` | Transactional email (see **Email** below) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | Optional SMTP when not using Resend |
+| `LEADS_API_SECRET` | If set, required on `POST /api/contact` and `POST /api/booking` (`x-leads-secret` or `Authorization: Bearer`) |
+| `LEADS_RATE_LIMIT_PER_MINUTE` | Max JSON lead posts per client IP per **60s window** (default `30`). Used by in-memory limiter, or by Upstash when configured below. |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Optional [Upstash Redis](https://upstash.com/) — enables **shared** rate limits across all instances (overrides in-memory). |
+| `LEADS_API_CORS_ORIGIN` | Optional single origin (e.g. `https://zapier.com`) for browser `fetch` to the lead APIs — adds CORS headers and `OPTIONS` support. |
+| `BLOB_READ_WRITE_TOKEN` | Optional [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) — partner logos (**first priority** when set). |
+| `S3_BUCKET`, `S3_PUBLIC_BASE_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Optional **S3-compatible** storage for partner logos (used when Blob is unset). Optional: `S3_REGION` (default `us-east-1`), `S3_ENDPOINT` + `S3_FORCE_PATH_STYLE=true` for MinIO. |
+| `NEXT_PUBLIC_SITE_URL` | Canonical URL for metadata and QR codes |
+
+## Setup
+
+```bash
+npm install
+cp .env.example .env
+# edit .env — set DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL, ADMIN_*
+
+npx prisma db push
+npm run db:seed
+```
+
+For migration-based workflows you can use `npm run db:migrate` instead of `db push` once you configure migrations locally.
+
+### Local PostgreSQL (Docker)
+
+```bash
+docker compose up -d
+# DATABASE_URL=postgresql://postgres:postgres@localhost:5432/josephkalinda
+npx prisma migrate deploy
+npm run db:seed
+```
+
+## Continuous integration
+
+GitHub Actions (`.github/workflows/ci.yml`) runs `prisma migrate deploy`, `npm run lint`, and `npm run build` against a disposable Postgres service.
+
+## Development
+
+```bash
+npm run dev
+```
+
+- Public site: `/` redirects to `/en` or `/fr` (cookie `NEXT_LOCALE`).
+- Consultation booking: `/en/book`, `/fr/book`.
+- Admin: `/admin/login` → dashboard, contacts, bookings, services, partners, **`/admin/content`** (CMS strings), plus edit routes for services and partners.
+
+## Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Next.js dev server |
+| `npm run build` | `prisma generate` + production build |
+| `npm run start` | Serve production build |
+| `npm run lint` | ESLint |
+| `npm run db:push` | Push Prisma schema to database |
+| `npm run db:migrate` | Create/apply dev migrations |
+| `npm run db:seed` | Seed admin, services, partners, navigation content |
+| `npm run db:studio` | Prisma Studio |
+
+## Architecture (high level)
+
+- **Public**: `[locale]` routes, DB-driven services/partners, server actions for contact + booking forms, transactional email (Resend or SMTP).
+- **HTTP API** (JSON `POST`): `/api/contact` and `/api/booking` mirror the same validation and persistence as the website forms (for integrations, Zapier, mobile apps, etc.).
+- **Admin**: NextAuth credentials, JWT sessions, protected `/admin/*` (middleware), dashboards, CMS for `ContentEntry`, service/partner editors.
+- **Content**: `ContentEntry` table for navigation labels (seeded); marketing copy fallbacks live in `src/messages/*`.
+
+## Email delivery
+
+1. If **`RESEND_API_KEY`** plus **`EMAIL_FROM`** and **`EMAIL_TO`** are set, mail is sent via the [Resend](https://resend.com) HTTP API.
+2. Otherwise, if **`SMTP_HOST`** plus **`EMAIL_FROM`** and **`EMAIL_TO`** are set, mail is sent with **Nodemailer** (optional `SMTP_USER` / `SMTP_PASS`, default port **587**, TLS on port **465**).
+3. If neither path is configured, sends are skipped (with a short log line in development).
+
+## HTTP API (JSON)
+
+- **`POST /api/contact`** — body must match `contactApiJsonSchema` (see `src/lib/validations.ts`): includes `consent: true`, optional `serviceId`, optional `serviceInterest` (free text when no catalog id), optional anti-spam field `website` (must be empty).
+- **`POST /api/booking`** — body must match `bookingApiJsonSchema`; optional honeypot `website` (must be empty).
+
+Responses: **`200`** `{ "ok": true }`, **`400`** invalid JSON, **`401`** when `LEADS_API_SECRET` is set but the request is not authenticated, **`422`** validation error (with `details` when Zod fails), **`429`** rate limit exceeded (`Retry-After` header, seconds).
+
+### Securing the lead APIs
+
+Set **`LEADS_API_SECRET`** in production and send the same value on every `POST` as either:
+
+- Header **`x-leads-secret: <your-secret>`**, or  
+- Header **`Authorization: Bearer <your-secret>`**
+
+Optional **`LEADS_RATE_LIMIT_PER_MINUTE`** (default **30**) configures the sliding window size. **Without Upstash**, limits are enforced **per Node process** (in-memory). **With `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`**, the same limit is enforced **globally** via [`@upstash/ratelimit`](https://github.com/upstash/ratelimit-js). The same per-IP counters apply to **`POST /api/contact`**, **`POST /api/booking`**, and the **public contact / booking server actions** (shared `contact:` / `booking:` keys).
+
+### Browser / CORS
+
+If you call the JSON APIs from a browser on another origin, set **`LEADS_API_CORS_ORIGIN`** to that origin (exact string). Preflight **`OPTIONS`** is supported on both routes.
+
+### Partner logo uploads
+
+Admins can upload **PNG / JPEG / WebP** (max **2 MB**) on **`/admin/partners/[id]`**. Storage priority: **Vercel Blob** (`BLOB_READ_WRITE_TOKEN`) → **S3-compatible** (`S3_*` when `S3_BUCKET`, keys, and `S3_PUBLIC_BASE_URL` are set; public reads must be allowed on uploaded keys, e.g. bucket policy or CloudFront) → **local** `public/uploads/partners/`.
+
+## Notes
+
+- **Schema migrations**: `prisma/migrations/` includes `contact_service_id` for linking contacts to services. Prefer `npm run db:migrate` in production after reviewing SQL; `db push` is fine for local iteration.
+- Email sending is **skipped** when no provider env vars are configured (see server logs in development).
