@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Globe, Mail, MapPin, Phone } from "lucide-react";
 import type { Messages } from "@/lib/i18n";
 import { WHATSAPP_URL } from "@/lib/site";
+import { BrandSign } from "@/components/hero/BrandSign";
 import { HeroQr } from "@/components/hero/HeroQr";
 import { MissionStatement } from "@/components/mission/MissionStatement";
 import { CurvedDivider } from "@/components/ui/CurvedDivider";
@@ -45,30 +46,17 @@ export function Hero({ messages, locale }: Props) {
           <div className="overflow-hidden rounded-2xl border border-brand-gold/30 bg-white shadow-brand-lg sm:rounded-3xl">
             <div className="grid lg:grid-cols-[minmax(0,1.08fr)_minmax(0,auto)_minmax(0,0.92fr)] lg:items-stretch">
               <div className="relative border-b border-brand-gold/25 bg-white p-8 sm:p-10 lg:border-b-0 lg:border-r-0 lg:p-12 xl:p-14">
-                <div className="inline-block border border-brand-forest-deep/35 px-6 py-4 sm:px-8 sm:py-5">
-                  <h1
-                    id="hero-heading"
-                    className="font-serif text-3xl font-semibold tracking-tight text-brand-forest-deep sm:text-4xl md:text-[2.75rem]"
-                  >
-                    Joseph{" "}
-                    <span className="font-normal italic text-brand-forest-muted">
-                      Kalinda
-                    </span>
-                  </h1>
-                </div>
-                <div className="mt-4 bg-brand-forest-deep px-4 py-2.5 text-center sm:px-6 sm:py-3">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-white sm:text-sm">
-                    {h.tagline}
-                  </p>
+                <div className="flex justify-center sm:justify-start">
+                  <BrandSign headingId="hero-heading" tagline={h.tagline} />
                 </div>
                 <div className="relative mt-8 border-l-4 border-brand-gold pl-5 sm:pl-6">
                   <p className="font-sans text-sm font-medium uppercase tracking-[0.12em] text-brand-forest-muted sm:text-base">
                     {h.firmLine1}
                   </p>
-                  <p className="mt-1 font-sans text-2xl font-bold uppercase tracking-tight text-brand-forest-deep sm:text-3xl md:text-[2rem]">
+                  <p className="mt-2 inline-block border-b-[3px] border-brand-gold pb-0.5 font-sans text-2xl font-bold uppercase tracking-tight text-brand-forest-deep sm:mt-2.5 sm:text-3xl md:text-[2rem]">
                     {h.firmHighlight}
                   </p>
-                  <p className="mt-1 font-sans text-sm font-medium uppercase tracking-[0.12em] text-brand-forest-muted sm:text-base">
+                  <p className="mt-2 font-sans text-sm font-medium uppercase tracking-[0.12em] text-brand-forest-muted sm:text-base">
                     {h.firmLine2}
                   </p>
                 </div>

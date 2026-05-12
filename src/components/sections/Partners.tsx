@@ -9,6 +9,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/cn";
 import Image from "next/image";
 import Link from "next/link";
+import { resolvePartnerLogoUrl } from "@/lib/partner-logos";
 
 type Props = {
   locale: "en" | "fr";
@@ -30,14 +31,14 @@ export function Partners({ locale, messages, partners }: Props) {
             locale === "fr"
               ? x.descriptionFr ?? ""
               : x.descriptionEn ?? "",
-          logo: x.logoPath,
+          logo: resolvePartnerLogoUrl(x.name, x.logoPath),
         }))
       : p.names.map((name, i) => ({
           id: `static-${i}`,
           name,
           href: null as string | null,
           desc: "",
-          logo: null as string | null,
+          logo: resolvePartnerLogoUrl(name, null),
         }));
 
   return (
@@ -52,6 +53,7 @@ export function Partners({ locale, messages, partners }: Props) {
             id="partners-heading"
             title={p.title}
             subtitle={p.subtitle}
+            variant="pill"
           />
         </Reveal>
         <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 lg:grid-cols-4">
@@ -62,27 +64,34 @@ export function Partners({ locale, messages, partners }: Props) {
                   reduce ? undefined : { scale: 1.02, transition: { duration: 0.2 } }
                 }
                 className={cn(
-                  "min-w-[200px] snap-center sm:min-w-0",
-                  "flex h-36 flex-col items-center justify-between gap-3 rounded-2xl border border-brand-forest-deep/12",
-                  "bg-white/90 px-4 py-4 text-center shadow-brand backdrop-blur-sm",
+                  "min-w-[220px] snap-center sm:min-w-0",
+                  "flex min-h-[11rem] flex-col items-center justify-between gap-3 rounded-2xl border border-brand-forest-deep/12",
+                  "bg-white/90 px-4 py-5 text-center shadow-brand backdrop-blur-sm",
                   "transition hover:border-brand-gold/60 hover:shadow-gold"
                 )}
               >
-                <div className="flex h-14 w-full items-center justify-center">
-                  {row.logo && row.logo.startsWith("/") ? (
+                <div className="flex h-24 w-full max-w-[200px] items-center justify-center sm:h-28 sm:max-w-none">
+                  {row.logo && row.logo.endsWith(".svg") ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={row.logo}
+                      alt={row.name}
+                      className="max-h-full w-full object-contain object-center"
+                    />
+                  ) : row.logo && row.logo.startsWith("/") ? (
                     <Image
                       src={row.logo}
                       alt={row.name}
-                      width={120}
-                      height={48}
-                      className="max-h-12 w-auto object-contain"
+                      width={200}
+                      height={80}
+                      className="max-h-24 w-auto object-contain"
                     />
                   ) : row.logo && row.logo.startsWith("http") ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={row.logo}
                       alt={row.name}
-                      className="max-h-12 w-auto object-contain"
+                      className="max-h-24 w-auto max-w-full object-contain"
                     />
                   ) : (
                     <span className="rounded-full border border-brand-gold/40 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand-forest-deep">

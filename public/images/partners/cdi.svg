@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 56" fill="none" role="img" aria-label="CDI">
+  <path fill="#1d4ed8" d="M8 40V16l10 6v12z"/>
+  <path fill="#dc2626" d="M22 22 34 16v24L22 34z"/>
+  <path fill="#1e3a8a" d="M36 40V18l8-4v26z"/>
+  <text x="52" y="30" fill="#0f172a" font-family="system-ui,sans-serif" font-size="20" font-weight="900" letter-spacing="-.02em">cdi</text>
+  <text x="52" y="46" fill="#64748b" font-family="system-ui,sans-serif" font-size="7.5" font-weight="600">Continental Development Ignition</text>
+</svg>

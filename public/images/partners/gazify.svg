@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 56" fill="none" role="img" aria-label="Gazify">
+  <path fill="#ea580c" d="M14 38c4-14 10-22 16-24 2 6-1 14-6 20 4-10 10-16 14-18-2 12-10 20-18 22z"/>
+  <text x="36" y="30" fill="#0f172a" font-family="system-ui,sans-serif" font-size="18" font-weight="900" letter-spacing="-.03em">Gazify</text>
+  <text x="36" y="46" fill="#ea580c" font-family="system-ui,sans-serif" font-size="8" font-weight="700" letter-spacing=".04em">GAS DELIVERED IN MINUTES</text>
+</svg>
